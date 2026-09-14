@@ -34,8 +34,9 @@ yarn-error.log*
 .env*
 !.env.example
 
-# local store runtime data
+# local store runtime data (keep data/.gitkeep)
 /data/store.json
+!/data/.gitkeep
 
 # vercel
 .vercel
@@ -43,7 +44,4 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
-
-# runtime store
-data/
 

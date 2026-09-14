@@ -27,3 +27,14 @@ Demo logins (from seed):
 - `npm run dev` — local development
 - `npm run build` — production build
 - `npm start` — run production server
+
+## Assets
+
+- `public/products/*.jpg` — 34 catalog images (Unsplash stand-ins matching the original download map).
+- `public/brand/firmin-mark-sm.png` and `firmin-lockup-md.png` — **placeholders**. Original Firmin Systems logos were user uploads in the source agent and could not be recovered (artifact URLs require auth; `Culture_Closet_Offline.zip` / `OPEN_ME_Culture_Closet.html` downloads returned login HTML).
+
+## Notes
+
+- Copy `.env.example` → `.env.local` and set secrets locally. Do not commit `.env` or `data/store.json`.
+- Demo checkout works without Stripe; real Apple Pay / Google Pay need Stripe keys + domain verification.
+
