@@ -6,65 +6,88 @@ import { formatPrice } from "@/lib/store-client";
 import type { Product } from "@/lib/types";
 
 export function ProductBuyBox({ product }: { product: Product }) {
-  const { addItem } = useCart();
-  const [size, setSize] = useState(product.sizes[0] || "");
+  const { addItem, openCart } = useCart();
+  const [size, setSize] = useState<string | null>(null);
   const [qty, setQty] = useState(1);
-  const available = product.inventory[size] ?? 0;
+  const [error, setError] = useState("");
+  const available = size ? (product.inventory[size] ?? 0) : 0;
+
+  function handleAdd() {
+    if (!size) {
+      setError("Select a size");
+      return;
+    }
+    if (available <= 0) {
+      setError("That size is out of stock");
+      return;
+    }
+    setError("");
+    addItem({ productId: product.id, size, quantity: qty });
+    openCart();
+  }
 
   return (
-    <div className="space-y-6">
+    <div className="buy-box">
       <div>
-        <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight mb-2">
-          {product.name}
-        </h1>
-        <p className="text-xl">{formatPrice(product.price)}</p>
+        <p className="buy-box-cat">{product.category}</p>
+        <h1 className="buy-box-title">{product.name}</h1>
+        <p className="buy-box-price">{formatPrice(product.price)}</p>
       </div>
 
-      <p className="text-[var(--muted)] leading-relaxed">{product.description}</p>
+      <p className="buy-box-desc">{product.description}</p>
 
       <div>
-        <p className="text-xs uppercase tracking-[0.12em] font-semibold mb-3">
-          Size
-        </p>
-        <div className="flex flex-wrap gap-2">
+        <div className="buy-box-row">
+          <p className="buy-box-label">Size</p>
+          {size ? (
+            <p className="buy-box-hint">{available} in stock</p>
+          ) : (
+            <p className="buy-box-hint">Select a size</p>
+          )}
+        </div>
+        <div className="size-grid" role="listbox" aria-label="Size">
           {product.sizes.map((s) => {
             const stock = product.inventory[s] ?? 0;
+            const selected = size === s;
             return (
               <button
                 key={s}
                 type="button"
-                className="size-btn disabled:opacity-30"
-                data-active={size === s}
+                role="option"
+                aria-selected={selected}
+                className={`size-btn${selected ? " is-active" : ""}`}
                 disabled={stock <= 0}
-                onClick={() => setSize(s)}
+                onClick={() => {
+                  setSize(s);
+                  setError("");
+                  setQty(1);
+                }}
               >
                 {s}
               </button>
             );
           })}
         </div>
-        <p className="text-xs text-[var(--muted)] mt-2">
-          {available > 0 ? `${available} in stock` : "Out of stock"}
-        </p>
+        {error ? <p className="buy-box-error">{error}</p> : null}
       </div>
 
       <div>
-        <p className="text-xs uppercase tracking-[0.12em] font-semibold mb-3">
-          Quantity
-        </p>
-        <div className="inline-flex items-center border border-ink">
+        <p className="buy-box-label">Quantity</p>
+        <div className="qty-control">
           <button
             type="button"
-            className="w-11 h-11"
+            aria-label="Decrease quantity"
             onClick={() => setQty((q) => Math.max(1, q - 1))}
           >
             −
           </button>
-          <span className="w-12 text-center">{qty}</span>
+          <span>{qty}</span>
           <button
             type="button"
-            className="w-11 h-11"
-            onClick={() => setQty((q) => Math.min(available || 1, q + 1))}
+            aria-label="Increase quantity"
+            onClick={() =>
+              setQty((q) => Math.min(Math.max(available, 1), q + 1))
+            }
           >
             +
           </button>
@@ -74,15 +97,13 @@ export function ProductBuyBox({ product }: { product: Product }) {
       <button
         type="button"
         className="btn-primary"
-        disabled={available <= 0}
-        onClick={() =>
-          addItem({ productId: product.id, size, quantity: qty })
-        }
+        disabled={Boolean(size) && available <= 0}
+        onClick={handleAdd}
       >
-        Add to cart
+        {size ? "Add to cart" : "Select a size"}
       </button>
 
-      <p className="text-sm text-[var(--muted)]">
+      <p className="buy-box-note">
         Pay online with Apple Pay or Google Pay — or pay with Apple Pay in
         person at pickup/delivery.
       </p>
