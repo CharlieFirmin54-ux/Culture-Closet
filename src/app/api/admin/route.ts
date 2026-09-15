@@ -2,10 +2,13 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/auth";
 import {
+  getStoreSettings,
   listOrders,
   listProducts,
   removeProduct,
   setProductActive,
+  setProductSale,
+  setStoreSalePercent,
   totalUnits,
   updateInventory,
 } from "@/lib/store";
@@ -15,12 +18,14 @@ export async function GET() {
     await requireAdmin();
     const products = await listProducts({ includeInactive: true });
     const orders = await listOrders();
+    const settings = await getStoreSettings();
     return NextResponse.json({
       products: products.map((p) => ({
         ...p,
         units: totalUnits(p),
       })),
       orders,
+      settings,
     });
   } catch {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -53,6 +58,30 @@ export async function PATCH(req: Request) {
         .parse(body);
       const product = await setProductActive(parsed.productId, parsed.active);
       return NextResponse.json({ product });
+    }
+
+    if (action === "sale") {
+      const parsed = z
+        .object({
+          productId: z.string(),
+          salePercent: z.number().min(0).max(90),
+        })
+        .parse(body);
+      const product = await setProductSale(
+        parsed.productId,
+        parsed.salePercent
+      );
+      return NextResponse.json({ product });
+    }
+
+    if (action === "store_sale") {
+      const parsed = z
+        .object({
+          storeSalePercent: z.number().min(0).max(90),
+        })
+        .parse(body);
+      const settings = await setStoreSalePercent(parsed.storeSalePercent);
+      return NextResponse.json({ settings });
     }
 
     if (action === "remove") {

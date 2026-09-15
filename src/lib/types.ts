@@ -18,6 +18,8 @@ export interface Product {
   slug: string;
   name: string;
   price: number;
+  /** Optional per-product sale percent (0–90). Combined with store-wide sale via max(). */
+  salePercent?: number;
   category: Category;
   description: string;
   image: string;
@@ -72,8 +74,14 @@ export interface Order {
   stripePaymentIntentId?: string;
 }
 
+export interface StoreSettings {
+  /** Whole-store sale percent (0–90). */
+  storeSalePercent: number;
+}
+
 export interface StoreData {
   products: Product[];
   users: User[];
   orders: Order[];
+  settings: StoreSettings;
 }

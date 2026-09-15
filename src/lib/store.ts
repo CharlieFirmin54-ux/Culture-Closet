@@ -1,7 +1,8 @@
 import { promises as fs } from "fs";
 import path from "path";
 import { seedData } from "./seed";
-import type { Order, Product, StoreData, User } from "./types";
+import { clampSalePercent } from "./store-client";
+import type { Order, Product, StoreData, StoreSettings, User } from "./types";
 
 const DATA_DIR = path.join(process.cwd(), "data");
 const DATA_FILE = path.join(DATA_DIR, "store.json");
@@ -22,10 +23,26 @@ function isServerless(): boolean {
   return Boolean(process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME);
 }
 
+function normalizeStore(raw: StoreData): StoreData {
+  const settings: StoreSettings = {
+    storeSalePercent: clampSalePercent(raw.settings?.storeSalePercent ?? 0),
+  };
+  const products = (raw.products || []).map((p) => ({
+    ...p,
+    salePercent: clampSalePercent(p.salePercent ?? 0) || undefined,
+  }));
+  return {
+    products,
+    users: raw.users || [],
+    orders: raw.orders || [],
+    settings,
+  };
+}
+
 async function tryRead(file: string): Promise<StoreData | null> {
   try {
     const raw = await fs.readFile(file, "utf8");
-    return JSON.parse(raw) as StoreData;
+    return normalizeStore(JSON.parse(raw) as StoreData);
   } catch {
     return null;
   }
@@ -50,18 +67,18 @@ async function ensureStore(): Promise<StoreData> {
     (isServerless() ? await tryRead(TMP_FILE) : null);
 
   const store = fromDisk ?? cloneSeed();
-  g.__cultureClosetStore = store;
+  g.__cultureClosetStore = normalizeStore(store);
 
   if (!fromDisk) {
     // Best-effort persistence. Never throw — Vercel cannot write under cwd.
     if (isServerless()) {
-      await tryWrite(TMP_FILE, store);
+      await tryWrite(TMP_FILE, g.__cultureClosetStore);
     } else {
-      await tryWrite(DATA_FILE, store);
+      await tryWrite(DATA_FILE, g.__cultureClosetStore);
     }
   }
 
-  return store;
+  return g.__cultureClosetStore;
 }
 
 async function writeStore(data: StoreData): Promise<void> {
@@ -126,6 +143,34 @@ export async function setProductActive(
   product.updatedAt = new Date().toISOString();
   await writeStore(store);
   return product;
+}
+
+export async function setProductSale(
+  productId: string,
+  salePercent: number
+): Promise<Product | null> {
+  const store = await ensureStore();
+  const product = store.products.find((p) => p.id === productId);
+  if (!product) return null;
+  const pct = clampSalePercent(salePercent);
+  product.salePercent = pct > 0 ? pct : undefined;
+  product.updatedAt = new Date().toISOString();
+  await writeStore(store);
+  return product;
+}
+
+export async function getStoreSettings(): Promise<StoreSettings> {
+  const store = await ensureStore();
+  return store.settings;
+}
+
+export async function setStoreSalePercent(
+  storeSalePercent: number
+): Promise<StoreSettings> {
+  const store = await ensureStore();
+  store.settings.storeSalePercent = clampSalePercent(storeSalePercent);
+  await writeStore(store);
+  return store.settings;
 }
 
 export async function removeProduct(productId: string): Promise<boolean> {

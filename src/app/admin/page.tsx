@@ -3,7 +3,13 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { formatPrice, totalUnits } from "@/lib/store-client";
+import {
+  clampSalePercent,
+  formatPrice,
+  getSalePercent,
+  getSalePrice,
+  totalUnits,
+} from "@/lib/store-client";
 import type { Order, Product } from "@/lib/types";
 
 type AdminProduct = Product & { units: number };
@@ -12,12 +18,15 @@ export default function AdminPage() {
   const router = useRouter();
   const [products, setProducts] = useState<AdminProduct[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
+  const [storeSalePercent, setStoreSalePercent] = useState(0);
+  const [storeSaleDraft, setStoreSaleDraft] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [savedId, setSavedId] = useState<string | null>(null);
   const [saving, setSaving] = useState<string | null>(null);
   const [drafts, setDrafts] = useState<Record<string, Record<string, number>>>(
     {}
   );
+  const [saleDrafts, setSaleDrafts] = useState<Record<string, number>>({});
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState<
     "all" | "footwear" | "tracksuits" | "accessories"
@@ -33,11 +42,17 @@ export default function AdminPage() {
     const data = await res.json();
     setProducts(data.products || []);
     setOrders(data.orders || []);
+    const storePct = clampSalePercent(data.settings?.storeSalePercent ?? 0);
+    setStoreSalePercent(storePct);
+    setStoreSaleDraft(storePct);
     const next: Record<string, Record<string, number>> = {};
+    const sales: Record<string, number> = {};
     for (const p of data.products || []) {
       next[p.id] = { ...p.inventory };
+      sales[p.id] = clampSalePercent(p.salePercent ?? 0);
     }
     setDrafts(next);
+    setSaleDrafts(sales);
   }
 
   useEffect(() => {
@@ -69,6 +84,13 @@ export default function AdminPage() {
       if ((draft[size] ?? 0) !== (product.inventory[size] ?? 0)) return true;
     }
     return false;
+  }
+
+  function isSaleDirty(product: AdminProduct) {
+    return (
+      clampSalePercent(saleDrafts[product.id] ?? 0) !==
+      clampSalePercent(product.salePercent ?? 0)
+    );
   }
 
   function setQty(productId: string, size: string, value: number) {
@@ -103,7 +125,10 @@ export default function AdminPage() {
       setError(data.error || "Update failed");
       return;
     }
-    if (body.action === "inventory" && productId) {
+    if (
+      (body.action === "inventory" || body.action === "sale") &&
+      productId
+    ) {
       setSavedId(productId);
       setTimeout(() => setSavedId((id) => (id === productId ? null : id)), 1800);
     }
@@ -117,7 +142,7 @@ export default function AdminPage() {
           <p className="admin-kicker">Back office</p>
           <h1 className="page-title">Inventory</h1>
           <p className="admin-sub">
-            Adjust stock by size, hide pieces from the shop, or jump to POS.
+            Edit stock, set individual sales, or discount the whole store.
           </p>
         </div>
         <div className="admin-hero-actions">
@@ -131,6 +156,67 @@ export default function AdminPage() {
       </div>
 
       {error && <p className="admin-error">{error}</p>}
+
+      <section className="admin-store-sale">
+        <div>
+          <p className="admin-kicker">Entire store</p>
+          <h2>Store-wide sale</h2>
+          <p>
+            Applies to every product. Individual product sales use whichever %
+            is higher.
+          </p>
+        </div>
+        <div className="admin-store-sale-controls">
+          <label>
+            <span>Discount %</span>
+            <input
+              type="number"
+              min={0}
+              max={90}
+              value={storeSaleDraft}
+              onChange={(e) =>
+                setStoreSaleDraft(clampSalePercent(Number(e.target.value)))
+              }
+            />
+          </label>
+          <div className="admin-sale-presets">
+            {[0, 10, 20, 30, 50].map((n) => (
+              <button
+                key={n}
+                type="button"
+                className={`admin-chip${storeSaleDraft === n ? " is-active" : ""}`}
+                onClick={() => setStoreSaleDraft(n)}
+              >
+                {n === 0 ? "Off" : `${n}%`}
+              </button>
+            ))}
+          </div>
+          <button
+            type="button"
+            className="btn-dark"
+            disabled={
+              saving === "store_sale" || storeSaleDraft === storeSalePercent
+            }
+            onClick={() =>
+              patch({
+                action: "store_sale",
+                storeSalePercent: storeSaleDraft,
+              })
+            }
+          >
+            {saving === "store_sale"
+              ? "Saving…"
+              : storeSaleDraft > 0
+                ? `Apply ${storeSaleDraft}% store sale`
+                : "Turn store sale off"}
+          </button>
+          {storeSalePercent > 0 && (
+            <p className="admin-live-sale">
+              Live now: {storeSalePercent}% off everything
+            </p>
+          )}
+        </div>
+      </section>
 
       <div className="admin-toolbar">
         <input
@@ -187,12 +273,16 @@ export default function AdminPage() {
         {filtered.map((p) => {
           const draft = drafts[p.id] || p.inventory;
           const dirty = isDirty(p);
+          const saleDirty = isSaleDirty(p);
           const units = totalUnits(draft);
+          const productSale = saleDrafts[p.id] ?? 0;
+          const effective = getSalePercent(productSale, storeSalePercent);
+          const salePrice = getSalePrice(p.price, productSale, storeSalePercent);
           return (
             <article
               key={p.id}
               className={`admin-card${!p.active ? " is-hidden" : ""}${
-                dirty ? " is-dirty" : ""
+                dirty || saleDirty ? " is-dirty" : ""
               }`}
             >
               <div className="admin-card-top">
@@ -204,13 +294,81 @@ export default function AdminPage() {
                   <p className="admin-card-cat">{p.category}</p>
                   <h2>{p.name}</h2>
                   <p className="admin-card-price">
-                    {formatPrice(p.price)} · {units} unit{units === 1 ? "" : "s"}
+                    {effective > 0 ? (
+                      <>
+                        <span className="price-was">{formatPrice(p.price)}</span>{" "}
+                        <span className="price-now">{formatPrice(salePrice)}</span>
+                        <span className="price-off"> −{effective}%</span>
+                      </>
+                    ) : (
+                      <>
+                        {formatPrice(p.price)} · {units} unit
+                        {units === 1 ? "" : "s"}
+                      </>
+                    )}
                   </p>
-                  <span
-                    className={`admin-status${p.active ? " is-live" : ""}`}
-                  >
+                  <span className={`admin-status${p.active ? " is-live" : ""}`}>
                     {p.active ? "Live in shop" : "Hidden"}
                   </span>
+                </div>
+              </div>
+
+              <div className="admin-sale-block">
+                <div className="admin-stock-head">
+                  <p>Individual sale</p>
+                  {saleDirty && <span className="admin-unsaved">Unsaved</span>}
+                </div>
+                <div className="admin-product-sale">
+                  <label>
+                    <span>Sale %</span>
+                    <input
+                      type="number"
+                      min={0}
+                      max={90}
+                      value={productSale}
+                      onChange={(e) =>
+                        setSaleDrafts((d) => ({
+                          ...d,
+                          [p.id]: clampSalePercent(Number(e.target.value)),
+                        }))
+                      }
+                    />
+                  </label>
+                  <div className="admin-sale-presets">
+                    {[0, 10, 20, 30, 50].map((n) => (
+                      <button
+                        key={n}
+                        type="button"
+                        className={`admin-chip${
+                          productSale === n ? " is-active" : ""
+                        }`}
+                        onClick={() =>
+                          setSaleDrafts((d) => ({ ...d, [p.id]: n }))
+                        }
+                      >
+                        {n === 0 ? "Off" : `${n}%`}
+                      </button>
+                    ))}
+                  </div>
+                  <button
+                    type="button"
+                    className="admin-text-btn"
+                    disabled={!saleDirty || saving === p.id}
+                    onClick={() =>
+                      patch(
+                        {
+                          action: "sale",
+                          productId: p.id,
+                          salePercent: productSale,
+                        },
+                        p.id
+                      )
+                    }
+                  >
+                    {saving === p.id && saleDirty
+                      ? "Saving…"
+                      : "Save product sale"}
+                  </button>
                 </div>
               </div>
 
@@ -218,7 +376,7 @@ export default function AdminPage() {
                 <div className="admin-stock-head">
                   <p>Stock by size</p>
                   {dirty && <span className="admin-unsaved">Unsaved</span>}
-                  {savedId === p.id && !dirty && (
+                  {savedId === p.id && !dirty && !saleDirty && (
                     <span className="admin-saved">Saved</span>
                   )}
                 </div>
@@ -273,7 +431,7 @@ export default function AdminPage() {
                     )
                   }
                 >
-                  {saving === p.id ? "Saving…" : "Save stock"}
+                  {saving === p.id && dirty ? "Saving…" : "Save stock"}
                 </button>
                 <button
                   type="button"

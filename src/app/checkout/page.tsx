@@ -10,6 +10,8 @@ type ProductLite = {
   id: string;
   name: string;
   price: number;
+  salePrice?: number;
+  onSale?: boolean;
 };
 
 export default function CheckoutPage() {
@@ -42,10 +44,12 @@ export default function CheckoutPage() {
 
   const total = useMemo(
     () =>
-      items.reduce(
-        (sum, i) => sum + (products[i.productId]?.price ?? 0) * i.quantity,
-        0
-      ),
+      items.reduce((sum, i) => {
+        const p = products[i.productId];
+        const unit =
+          p?.onSale && p.salePrice != null ? p.salePrice : p?.price ?? 0;
+        return sum + unit * i.quantity;
+      }, 0),
     [items, products]
   );
 
@@ -101,7 +105,10 @@ export default function CheckoutPage() {
                 <span className="tabular-nums">
                   {products[item.productId]
                     ? formatPrice(
-                        products[item.productId].price * item.quantity
+                        (products[item.productId].onSale &&
+                        products[item.productId].salePrice != null
+                          ? products[item.productId].salePrice!
+                          : products[item.productId].price) * item.quantity
                       )
                     : "—"}
                 </span>

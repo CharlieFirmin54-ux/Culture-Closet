@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ProductCard } from "@/components/ProductCard";
-import { listProducts } from "@/lib/store";
+import { getStoreSettings, listProducts } from "@/lib/store";
+import { withPricing } from "@/lib/pricing";
 import type { Category } from "@/lib/types";
 
 export default async function CatalogPage({
@@ -10,7 +11,10 @@ export default async function CatalogPage({
 }) {
   const sp = await searchParams;
   const category = sp.category as Category | undefined;
-  let products = await listProducts({ category });
+  const settings = await getStoreSettings();
+  let products = (await listProducts({ category })).map((p) =>
+    withPricing(p, settings.storeSalePercent)
+  );
 
   if (sp.q) {
     const q = sp.q.toLowerCase();
@@ -35,8 +39,19 @@ export default async function CatalogPage({
       <div className="section-head" style={{ marginBottom: "2rem" }}>
         <div>
           <h1 className="page-title">The Edit</h1>
-          <p style={{ margin: "0.65rem 0 0", color: "var(--muted)", fontSize: 13, letterSpacing: "0.08em", textTransform: "uppercase" }}>
+          <p
+            style={{
+              margin: "0.65rem 0 0",
+              color: "var(--muted)",
+              fontSize: 13,
+              letterSpacing: "0.08em",
+              textTransform: "uppercase",
+            }}
+          >
             {products.length} pieces
+            {settings.storeSalePercent > 0
+              ? ` · ${settings.storeSalePercent}% store sale`
+              : ""}
           </p>
         </div>
       </div>

@@ -1,7 +1,13 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getSession } from "@/lib/auth";
-import { createOrder, decrementStock, getProductById } from "@/lib/store";
+import {
+  createOrder,
+  decrementStock,
+  getProductById,
+  getStoreSettings,
+} from "@/lib/store";
+import { getSalePrice } from "@/lib/store-client";
 import type { Order, OrderItem } from "@/lib/types";
 
 const schema = z.object({
@@ -31,6 +37,7 @@ export async function POST(req: Request) {
       );
     }
     const parsed = schema.parse(await req.json());
+    const settings = await getStoreSettings();
     const lines: OrderItem[] = [];
     let total = 0;
     for (const item of parsed.items) {
@@ -41,14 +48,19 @@ export async function POST(req: Request) {
           { status: 400 }
         );
       }
+      const unitPrice = getSalePrice(
+        product.price,
+        product.salePercent,
+        settings.storeSalePercent
+      );
       lines.push({
         productId: product.id,
         name: product.name,
         size: item.size,
         quantity: item.quantity,
-        unitPrice: product.price,
+        unitPrice,
       });
-      total += product.price * item.quantity;
+      total += unitPrice * item.quantity;
     }
 
     const stock = await decrementStock(parsed.items);

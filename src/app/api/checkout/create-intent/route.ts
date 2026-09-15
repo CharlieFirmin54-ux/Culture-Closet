@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getSession } from "@/lib/auth";
-import { getProductById } from "@/lib/store";
+import { getProductById, getStoreSettings } from "@/lib/store";
+import { getSalePrice } from "@/lib/store-client";
 import { getPublishableKey, getStripe, hasStripe, toMinor } from "@/lib/stripe";
 import type { CartItem } from "@/lib/types";
 
@@ -18,6 +19,7 @@ const bodySchema = z.object({
 });
 
 async function priceCart(items: CartItem[]) {
+  const settings = await getStoreSettings();
   let total = 0;
   const lines: {
     productId: string;
@@ -35,13 +37,18 @@ async function priceCart(items: CartItem[]) {
     if (stock < item.quantity) {
       throw new Error(`Not enough stock for ${product.name} (${item.size})`);
     }
-    total += product.price * item.quantity;
+    const unitPrice = getSalePrice(
+      product.price,
+      product.salePercent,
+      settings.storeSalePercent
+    );
+    total += unitPrice * item.quantity;
     lines.push({
       productId: product.id,
       name: product.name,
       size: item.size,
       quantity: item.quantity,
-      unitPrice: product.price,
+      unitPrice,
     });
   }
   return { total, lines };

@@ -2,7 +2,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ProductBuyBox } from "@/components/ProductBuyBox";
 import { ProductCard } from "@/components/ProductCard";
-import { getProductBySlug, listProducts } from "@/lib/store";
+import { getProductBySlug, getStoreSettings, listProducts } from "@/lib/store";
+import { withPricing } from "@/lib/pricing";
 
 export default async function ProductPage({
   params,
@@ -10,12 +11,15 @@ export default async function ProductPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const product = await getProductBySlug(slug);
-  if (!product) notFound();
+  const settings = await getStoreSettings();
+  const raw = await getProductBySlug(slug);
+  if (!raw) notFound();
+  const product = withPricing(raw, settings.storeSalePercent);
 
   const related = (await listProducts({ category: product.category }))
     .filter((p) => p.id !== product.id)
-    .slice(0, 4);
+    .slice(0, 4)
+    .map((p) => withPricing(p, settings.storeSalePercent));
 
   return (
     <div className="container">
@@ -46,6 +50,9 @@ export default async function ProductPage({
         <div className="product-card-media" style={{ marginBottom: 0 }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={product.image} alt={product.name} />
+          {product.onSale ? (
+            <span className="sale-badge">−{product.effectiveSalePercent}%</span>
+          ) : null}
         </div>
         <ProductBuyBox product={product} />
       </div>
@@ -53,7 +60,10 @@ export default async function ProductPage({
       {related.length > 0 && (
         <section className="section" style={{ marginTop: "4.5rem" }}>
           <div className="section-head">
-            <h2 className="section-title" style={{ fontSize: "clamp(2rem,6vw,3.5rem)" }}>
+            <h2
+              className="section-title"
+              style={{ fontSize: "clamp(2rem,6vw,3.5rem)" }}
+            >
               More from the edit
             </h2>
           </div>

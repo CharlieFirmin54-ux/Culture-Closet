@@ -514,4 +514,7 @@ export const seedData: StoreData = {
   products: seedProducts,
   users: seedUsers,
   orders: [],
+  settings: {
+    storeSalePercent: 0,
+  },
 };

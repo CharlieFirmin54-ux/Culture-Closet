@@ -11,6 +11,8 @@ type ProductLite = {
   id: string;
   name: string;
   price: number;
+  salePrice?: number;
+  onSale?: boolean;
   image: string;
   slug: string;
 };
@@ -35,7 +37,8 @@ export function CartDrawer() {
   const total = useMemo(() => {
     return items.reduce((sum, item) => {
       const p = products[item.productId];
-      return sum + (p?.price ?? 0) * item.quantity;
+      const unit = p?.onSale && p.salePrice != null ? p.salePrice : p?.price ?? 0;
+      return sum + unit * item.quantity;
     }, 0);
   }, [items, products]);
 
@@ -102,7 +105,22 @@ export function CartDrawer() {
                         Size {item.size}
                       </p>
                       <p className="text-sm mt-1">
-                        {p ? formatPrice(p.price) : "—"}
+                        {p ? (
+                          p.onSale && p.salePrice != null ? (
+                            <>
+                              <span className="price-was">
+                                {formatPrice(p.price)}
+                              </span>{" "}
+                              <span className="price-now">
+                                {formatPrice(p.salePrice)}
+                              </span>
+                            </>
+                          ) : (
+                            formatPrice(p.price)
+                          )
+                        ) : (
+                          "—"
+                        )}
                       </p>
                       <div className="flex items-center gap-3 mt-2">
                         <div className="flex items-center border border-[var(--line)]">

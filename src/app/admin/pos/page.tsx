@@ -8,9 +8,15 @@ import { CheckoutPayment } from "@/components/CheckoutPayment";
 import { formatPrice } from "@/lib/store-client";
 import type { CartItem, Product } from "@/lib/types";
 
+type PosProduct = Product & {
+  salePrice?: number;
+  onSale?: boolean;
+  effectiveSalePercent?: number;
+};
+
 export default function PosPage() {
   const router = useRouter();
-  const [products, setProducts] = useState<Product[]>([]);
+  const [products, setProducts] = useState<PosProduct[]>([]);
   const [query, setQuery] = useState("");
   const [ticket, setTicket] = useState<CartItem[]>([]);
   const [email, setEmail] = useState("pickup@culturecloset.com");
@@ -40,11 +46,13 @@ export default function PosPage() {
   const total = useMemo(() => {
     return ticket.reduce((sum, item) => {
       const p = products.find((x) => x.id === item.productId);
-      return sum + (p?.price ?? 0) * item.quantity;
+      const unit =
+        p?.onSale && p.salePrice != null ? p.salePrice : p?.price ?? 0;
+      return sum + unit * item.quantity;
     }, 0);
   }, [ticket, products]);
 
-  function addToTicket(product: Product, size: string) {
+  function addToTicket(product: PosProduct, size: string) {
     setDone(null);
     setTicket((prev) => {
       const idx = prev.findIndex(
@@ -112,7 +120,20 @@ export default function PosPage() {
                   </div>
                   <div className="min-w-0">
                     <p className="text-sm font-medium truncate">{p.name}</p>
-                    <p className="text-sm">{formatPrice(p.price)}</p>
+                    <p className="text-sm">
+                      {p.onSale && p.salePrice != null ? (
+                        <>
+                          <span className="price-was">
+                            {formatPrice(p.price)}
+                          </span>{" "}
+                          <span className="price-now">
+                            {formatPrice(p.salePrice)}
+                          </span>
+                        </>
+                      ) : (
+                        formatPrice(p.price)
+                      )}
+                    </p>
                     <div className="flex flex-wrap gap-1 mt-2">
                       {p.sizes.map((s) => {
                         const stock = p.inventory[s] ?? 0;

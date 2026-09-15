@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ProductCard } from "@/components/ProductCard";
-import { listProducts } from "@/lib/store";
+import { getStoreSettings, listProducts } from "@/lib/store";
+import { withPricing } from "@/lib/pricing";
 import type { Category } from "@/lib/types";
 
 const sections: { key: Category; title: string; href: string }[] = [
@@ -14,7 +15,10 @@ const sections: { key: Category; title: string; href: string }[] = [
 ];
 
 export default async function HomePage() {
-  const products = await listProducts();
+  const settings = await getStoreSettings();
+  const products = (await listProducts()).map((p) =>
+    withPricing(p, settings.storeSalePercent)
+  );
   const heroImage =
     products.find((p) => p.slug === "louis-trainer-grey-white")?.image ||
     products.find((p) => p.category === "footwear")?.image ||
@@ -29,7 +33,11 @@ export default async function HomePage() {
           <div className="hero-shade" />
         </div>
         <div className="hero-content">
-          <p className="hero-kicker">Private edit · Seasonless</p>
+          <p className="hero-kicker">
+            {settings.storeSalePercent > 0
+              ? `Store sale · ${settings.storeSalePercent}% off`
+              : "Private edit · Seasonless"}
+          </p>
           <h1 className="hero-brand">Culture Closet</h1>
           <p className="hero-line">
             Selected trainers and sets. Quiet presentation. No noise.

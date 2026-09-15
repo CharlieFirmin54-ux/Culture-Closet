@@ -3,9 +3,9 @@
 import { useState } from "react";
 import { useCart } from "@/lib/cart";
 import { formatPrice } from "@/lib/store-client";
-import type { Product } from "@/lib/types";
+import type { PricedProduct } from "@/lib/pricing";
 
-export function ProductBuyBox({ product }: { product: Product }) {
+export function ProductBuyBox({ product }: { product: PricedProduct }) {
   const { addItem, openCart } = useCart();
   const [size, setSize] = useState<string | null>(null);
   const [qty, setQty] = useState(1);
@@ -31,7 +31,17 @@ export function ProductBuyBox({ product }: { product: Product }) {
       <div>
         <p className="buy-box-cat">{product.category}</p>
         <h1 className="buy-box-title">{product.name}</h1>
-        <p className="buy-box-price">{formatPrice(product.price)}</p>
+        <p className={`buy-box-price${product.onSale ? " has-sale" : ""}`}>
+          {product.onSale ? (
+            <>
+              <span className="price-was">{formatPrice(product.price)}</span>{" "}
+              <span className="price-now">{formatPrice(product.salePrice)}</span>
+              <span className="price-off"> −{product.effectiveSalePercent}%</span>
+            </>
+          ) : (
+            formatPrice(product.price)
+          )}
+        </p>
       </div>
 
       <p className="buy-box-desc">{product.description}</p>
