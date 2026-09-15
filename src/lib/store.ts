@@ -1,30 +1,79 @@
 import { promises as fs } from "fs";
 import path from "path";
 import { seedData } from "./seed";
-import type {
-  Order,
-  Product,
-  StoreData,
-  User,
-} from "./types";
+import type { Order, Product, StoreData, User } from "./types";
 
 const DATA_DIR = path.join(process.cwd(), "data");
 const DATA_FILE = path.join(DATA_DIR, "store.json");
+const TMP_FILE = path.join("/tmp", "culture-closet-store.json");
 
-async function ensureStore(): Promise<StoreData> {
-  await fs.mkdir(DATA_DIR, { recursive: true });
+type GlobalStore = {
+  __cultureClosetStore?: StoreData;
+  __cultureClosetStoreReady?: boolean;
+};
+
+const g = globalThis as typeof globalThis & GlobalStore;
+
+function cloneSeed(): StoreData {
+  return structuredClone(seedData);
+}
+
+function isServerless(): boolean {
+  return Boolean(process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME);
+}
+
+async function tryRead(file: string): Promise<StoreData | null> {
   try {
-    const raw = await fs.readFile(DATA_FILE, "utf8");
+    const raw = await fs.readFile(file, "utf8");
     return JSON.parse(raw) as StoreData;
   } catch {
-    await fs.writeFile(DATA_FILE, JSON.stringify(seedData, null, 2), "utf8");
-    return structuredClone(seedData);
+    return null;
   }
 }
 
+async function tryWrite(file: string, data: StoreData): Promise<boolean> {
+  try {
+    await fs.mkdir(path.dirname(file), { recursive: true });
+    await fs.writeFile(file, JSON.stringify(data, null, 2), "utf8");
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function ensureStore(): Promise<StoreData> {
+  if (g.__cultureClosetStore) return g.__cultureClosetStore;
+
+  // Prefer durable project data locally; on Vercel the app FS is read-only.
+  const fromDisk =
+    (await tryRead(DATA_FILE)) ||
+    (isServerless() ? await tryRead(TMP_FILE) : null);
+
+  const store = fromDisk ?? cloneSeed();
+  g.__cultureClosetStore = store;
+
+  if (!fromDisk) {
+    // Best-effort persistence. Never throw — Vercel cannot write under cwd.
+    if (isServerless()) {
+      await tryWrite(TMP_FILE, store);
+    } else {
+      await tryWrite(DATA_FILE, store);
+    }
+  }
+
+  return store;
+}
+
 async function writeStore(data: StoreData): Promise<void> {
-  await fs.mkdir(DATA_DIR, { recursive: true });
-  await fs.writeFile(DATA_FILE, JSON.stringify(data, null, 2), "utf8");
+  g.__cultureClosetStore = data;
+  if (isServerless()) {
+    await tryWrite(TMP_FILE, data);
+    return;
+  }
+  const ok = await tryWrite(DATA_FILE, data);
+  if (!ok) {
+    await tryWrite(TMP_FILE, data);
+  }
 }
 
 export async function getStore(): Promise<StoreData> {
