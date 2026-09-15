@@ -28,8 +28,8 @@ export function SiteHeader({
   return (
     <header className="site-header">
       <div className="site-banner">
-        Private client line ·{" "}
-        <a href="https://wa.me/447359938605">WhatsApp 07359938605</a>
+        Appointments &amp; private client line ·{" "}
+        <a href="https://wa.me/447359938605">WhatsApp</a>
       </div>
 
       <div className="site-header-inner">

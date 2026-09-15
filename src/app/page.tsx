@@ -16,6 +16,7 @@ const sections: { key: Category; title: string; href: string }[] = [
 export default async function HomePage() {
   const products = await listProducts();
   const heroImage =
+    products.find((p) => p.slug === "louis-trainer-grey-white")?.image ||
     products.find((p) => p.category === "footwear")?.image ||
     "/products/fw01.jpg";
 
@@ -28,14 +29,14 @@ export default async function HomePage() {
           <div className="hero-shade" />
         </div>
         <div className="hero-content">
-          <p className="hero-kicker">Essentials · Limited edit</p>
+          <p className="hero-kicker">Private edit · Seasonless</p>
           <h1 className="hero-brand">Culture Closet</h1>
           <p className="hero-line">
-            Elevated streetwear. Built for rotation, finished for the drop.
+            Selected trainers and sets. Quiet presentation. No noise.
           </p>
           <div className="hero-cta">
             <Link href="/catalog" className="btn-solid">
-              Shop the edit
+              Enter the edit
             </Link>
             <Link href="/catalog?category=footwear" className="btn-ghost">
               Footwear
@@ -46,10 +47,11 @@ export default async function HomePage() {
 
       <div className="container">
         <div className="shop-intro">
+          <p className="shop-intro-label">The house</p>
           <p>
-            A quiet edit of footwear, tracksuits and accessories. Secure
-            checkout with Apple Pay and Google Pay — or settle in person on
-            pickup and delivery.
+            A restrained selection of footwear, tracksuits and accessories —
+            photographed as worn, sold as owned. Apple Pay and Google Pay
+            online; Apple Pay in person on pickup and delivery.
           </p>
         </div>
 

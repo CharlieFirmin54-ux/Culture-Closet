@@ -20,9 +20,9 @@ const body = DM_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "Culture Closet | Essentials",
+  title: "Culture Closet | Selected Streetwear",
   description:
-    "Culture Closet — curated footwear, sets and accessories. Apple Pay & Google Pay online; Apple Pay in person for pickup and delivery.",
+    "Culture Closet — a private edit of trainers, sets and accessories. Apple Pay & Google Pay online; Apple Pay in person for pickup and delivery.",
 };
 
 export default async function RootLayout({

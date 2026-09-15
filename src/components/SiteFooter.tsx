@@ -7,7 +7,7 @@ export function SiteFooter() {
         <div>
           <p className="footer-brand">Culture Closet</p>
           <p>
-            UK streetwear essentials. Appointments, pickup and delivery —
+            A private UK streetwear house. Appointments, pickup and delivery —
             Apple Pay in person when you need it.
           </p>
         </div>
