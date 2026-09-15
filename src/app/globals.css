@@ -1698,6 +1698,87 @@ img {
   opacity: 0.72;
 }
 
+.admin-card.is-selected {
+  border-color: var(--ink);
+  box-shadow: inset 0 0 0 1px var(--ink);
+}
+
+.admin-selection-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  margin-bottom: 1.5rem;
+  padding: 1rem 1.1rem;
+  border: 1px solid var(--ink);
+  background: #fff;
+  position: sticky;
+  top: 5.5rem;
+  z-index: 20;
+}
+
+@media (min-width: 720px) {
+  .admin-selection-bar {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+
+.admin-selection-name {
+  margin: 0.2rem 0 0;
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+.admin-selection-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  align-items: center;
+}
+
+.admin-select {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin: 0 0 0.55rem;
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.admin-select input {
+  width: 1rem;
+  height: 1rem;
+  accent-color: #000;
+}
+
+.admin-remove-btn {
+  min-height: 2.6rem;
+  padding: 0.65rem 1rem;
+  border: 1px solid #8a1f1f;
+  background: #fff;
+  color: #8a1f1f;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.admin-remove-btn:hover {
+  background: #8a1f1f;
+  color: #fff;
+}
+
+.admin-remove-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
 .admin-card-top {
   display: grid;
   grid-template-columns: 88px 1fr;

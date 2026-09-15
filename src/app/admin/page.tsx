@@ -32,6 +32,7 @@ export default function AdminPage() {
     "all" | "footwear" | "tracksuits" | "accessories"
   >("all");
   const [status, setStatus] = useState<"all" | "live" | "hidden">("all");
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
   async function load() {
     const res = await fetch("/api/admin");
@@ -132,7 +133,26 @@ export default function AdminPage() {
       setSavedId(productId);
       setTimeout(() => setSavedId((id) => (id === productId ? null : id)), 1800);
     }
+    if (body.action === "remove" && body.productId === selectedId) {
+      setSelectedId(null);
+    }
     await load();
+  }
+
+  const selectedProduct = useMemo(
+    () => products.find((p) => p.id === selectedId) || null,
+    [products, selectedId]
+  );
+
+  async function removeProduct(product: AdminProduct) {
+    if (
+      !confirm(
+        `Permanently remove “${product.name}” from inventory? This cannot be undone.`
+      )
+    ) {
+      return;
+    }
+    await patch({ action: "remove", productId: product.id }, product.id);
   }
 
   return (
@@ -142,7 +162,8 @@ export default function AdminPage() {
           <p className="admin-kicker">Back office</p>
           <h1 className="page-title">Inventory</h1>
           <p className="admin-sub">
-            Edit stock, set individual sales, or discount the whole store.
+            Edit stock, set sales, select a product, or remove it from
+            inventory.
           </p>
         </div>
         <div className="admin-hero-actions">
@@ -156,6 +177,34 @@ export default function AdminPage() {
       </div>
 
       {error && <p className="admin-error">{error}</p>}
+
+      {selectedProduct && (
+        <div className="admin-selection-bar">
+          <div>
+            <p className="admin-kicker">Selected</p>
+            <p className="admin-selection-name">{selectedProduct.name}</p>
+          </div>
+          <div className="admin-selection-actions">
+            <button
+              type="button"
+              className="admin-link-btn"
+              onClick={() => setSelectedId(null)}
+            >
+              Deselect
+            </button>
+            <button
+              type="button"
+              className="admin-remove-btn"
+              disabled={saving === selectedProduct.id}
+              onClick={() => removeProduct(selectedProduct)}
+            >
+              {saving === selectedProduct.id
+                ? "Removing…"
+                : "Remove from inventory"}
+            </button>
+          </div>
+        </div>
+      )}
 
       <section className="admin-store-sale">
         <div>
@@ -283,7 +332,7 @@ export default function AdminPage() {
               key={p.id}
               className={`admin-card${!p.active ? " is-hidden" : ""}${
                 dirty || saleDirty ? " is-dirty" : ""
-              }`}
+              }${selectedId === p.id ? " is-selected" : ""}`}
             >
               <div className="admin-card-top">
                 <div className="admin-card-media">
@@ -291,6 +340,16 @@ export default function AdminPage() {
                   <img src={p.image} alt="" />
                 </div>
                 <div className="admin-card-meta">
+                  <label className="admin-select">
+                    <input
+                      type="radio"
+                      name="inventory-selection"
+                      checked={selectedId === p.id}
+                      onChange={() => setSelectedId(p.id)}
+                      aria-label={`Select ${p.name}`}
+                    />
+                    <span>{selectedId === p.id ? "Selected" : "Select"}</span>
+                  </label>
                   <p className="admin-card-cat">{p.category}</p>
                   <h2>{p.name}</h2>
                   <p className="admin-card-price">
@@ -447,25 +506,20 @@ export default function AdminPage() {
                 >
                   {p.active ? "Hide from shop" : "Show in shop"}
                 </button>
-                <button
-                  type="button"
-                  className="admin-text-btn is-danger"
-                  disabled={saving === p.id}
-                  onClick={() => {
-                    if (
-                      confirm(
-                        `Permanently remove “${p.name}”? This cannot be undone.`
-                      )
-                    ) {
-                      patch({ action: "remove", productId: p.id });
-                    }
-                  }}
-                >
-                  Remove
-                </button>
                 <Link href={`/products/${p.slug}`} className="admin-text-btn">
                   Open PDP
                 </Link>
+                <button
+                  type="button"
+                  className="admin-remove-btn"
+                  disabled={saving === p.id}
+                  onClick={() => {
+                    setSelectedId(p.id);
+                    removeProduct(p);
+                  }}
+                >
+                  {saving === p.id ? "Removing…" : "Remove item"}
+                </button>
               </div>
             </article>
           );
