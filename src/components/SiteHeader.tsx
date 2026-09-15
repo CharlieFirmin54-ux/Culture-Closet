@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Menu, Search, ShoppingBag, User, X } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { useCart } from "@/lib/cart";
 
 const links = [
@@ -24,6 +25,69 @@ export function SiteHeader({
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [query, setQuery] = useState("");
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => setMounted(true), []);
+
+  useEffect(() => {
+    if (!mobileOpen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [mobileOpen]);
+
+  const mobileMenu =
+    mounted &&
+    mobileOpen &&
+    createPortal(
+      <div className="mobile-nav" role="dialog" aria-modal="true" aria-label="Menu">
+        <button
+          type="button"
+          className="mobile-nav-backdrop"
+          aria-label="Close menu"
+          onClick={() => setMobileOpen(false)}
+        />
+        <aside className="mobile-nav-panel">
+          <div className="mobile-nav-top">
+            <p className="mobile-nav-label">Menu</p>
+            <button
+              type="button"
+              className="mobile-nav-close"
+              aria-label="Close"
+              onClick={() => setMobileOpen(false)}
+            >
+              <X size={22} strokeWidth={1.5} />
+            </button>
+          </div>
+          <nav className="mobile-nav-links">
+            {links.map((l) => (
+              <Link
+                key={l.href}
+                href={l.href}
+                onClick={() => setMobileOpen(false)}
+              >
+                {l.label}
+              </Link>
+            ))}
+            <Link href="/login" onClick={() => setMobileOpen(false)}>
+              {userName ? "Account" : "Log in"}
+            </Link>
+            {isAdmin && (
+              <Link href="/admin" onClick={() => setMobileOpen(false)}>
+                Admin
+              </Link>
+            )}
+          </nav>
+          <p className="mobile-nav-note">
+            Private client line ·{" "}
+            <a href="https://wa.me/447359938605">WhatsApp</a>
+          </p>
+        </aside>
+      </div>,
+      document.body
+    );
 
   return (
     <header className="site-header">
@@ -91,109 +155,21 @@ export function SiteHeader({
 
       {searchOpen && (
         <form
+          className="site-search"
           action="/catalog"
           onSubmit={() => setSearchOpen(false)}
-          style={{
-            padding: "0 1rem 1rem",
-            maxWidth: 1440,
-            margin: "0 auto",
-            width: "100%",
-          }}
         >
           <input
             name="q"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search the edit…"
-            style={{
-              width: "100%",
-              border: "1px solid var(--line)",
-              background: "var(--panel)",
-              padding: "0.95rem 1.1rem",
-              outline: "none",
-              letterSpacing: "0.04em",
-              fontSize: "0.9rem",
-            }}
             autoFocus
           />
         </form>
       )}
 
-      {mobileOpen && (
-        <div
-          style={{
-            position: "fixed",
-            inset: 0,
-            zIndex: 60,
-            background: "rgba(0,0,0,0.5)",
-          }}
-          onClick={() => setMobileOpen(false)}
-        >
-          <div
-            style={{
-              width: "82%",
-              maxWidth: 360,
-              height: "100%",
-              background: "var(--bg)",
-              padding: "1.75rem",
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                marginBottom: "2.5rem",
-                alignItems: "center",
-              }}
-            >
-              <span
-                className="site-logo"
-                style={{ fontSize: "0.85rem", textIndent: 0, letterSpacing: "0.28em" }}
-              >
-                Menu
-              </span>
-              <button
-                type="button"
-                aria-label="Close"
-                onClick={() => setMobileOpen(false)}
-                style={{ border: 0, background: "transparent" }}
-              >
-                <X size={22} />
-              </button>
-            </div>
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                gap: "1.5rem",
-                fontSize: "0.95rem",
-                textTransform: "uppercase",
-                letterSpacing: "0.22em",
-                fontWeight: 600,
-              }}
-            >
-              {links.map((l) => (
-                <Link
-                  key={l.href}
-                  href={l.href}
-                  onClick={() => setMobileOpen(false)}
-                >
-                  {l.label}
-                </Link>
-              ))}
-              <Link href="/login" onClick={() => setMobileOpen(false)}>
-                {userName ? "Account" : "Log in"}
-              </Link>
-              {isAdmin && (
-                <Link href="/admin" onClick={() => setMobileOpen(false)}>
-                  Admin
-                </Link>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
+      {mobileMenu}
     </header>
   );
 }
