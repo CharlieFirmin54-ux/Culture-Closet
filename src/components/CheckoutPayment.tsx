@@ -247,7 +247,9 @@ export function CheckoutPayment({
   const [stripePromise, setStripePromise] =
     useState<Promise<Stripe | null> | null>(null);
   const [clientSecret, setClientSecret] = useState<string | null>(null);
-  const [mode, setMode] = useState<"stripe" | "demo" | "loading">("loading");
+  const [mode, setMode] = useState<"stripe" | "demo" | "loading" | "error">(
+    "loading"
+  );
   const [total, setTotal] = useState(0);
   const [error, setError] = useState<string | null>(null);
 
@@ -258,6 +260,7 @@ export function CheckoutPayment({
     async function boot() {
       setMode("loading");
       setError(null);
+      setClientSecret(null);
       const res = await fetch("/api/checkout/create-intent", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -267,7 +270,7 @@ export function CheckoutPayment({
       if (cancelled) return;
       if (!res.ok) {
         setError(data.error || "Could not start checkout");
-        setMode("demo");
+        setMode("error");
         return;
       }
       setTotal(data.total);
@@ -298,12 +301,21 @@ export function CheckoutPayment({
     );
   }
 
-  if (error && mode === "loading") {
-    return <p className="text-sm text-red-700">{error}</p>;
+  if (mode === "error") {
+    return (
+      <p className="text-sm text-red-700">
+        {error || "Could not start checkout for this ticket."}
+      </p>
+    );
   }
 
   if (mode === "loading") {
-    return <p className="text-sm text-[var(--muted)]">Preparing payment…</p>;
+    return (
+      <p className="text-sm text-[var(--muted)]">
+        Preparing payment for {items.reduce((n, i) => n + i.quantity, 0)}{" "}
+        item{items.reduce((n, i) => n + i.quantity, 0) === 1 ? "" : "s"}…
+      </p>
+    );
   }
 
   if (mode === "demo") {

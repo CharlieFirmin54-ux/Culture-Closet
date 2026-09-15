@@ -11,13 +11,16 @@ import { getSalePrice } from "@/lib/store-client";
 import type { Order, OrderItem } from "@/lib/types";
 
 const schema = z.object({
-  items: z.array(
-    z.object({
-      productId: z.string(),
-      size: z.string(),
-      quantity: z.number().int().positive(),
-    })
-  ),
+  items: z
+    .array(
+      z.object({
+        productId: z.string(),
+        size: z.string(),
+        quantity: z.number().int().positive().max(99),
+      })
+    )
+    .min(1)
+    .max(50),
   email: z.string().email(),
   channel: z.enum(["online", "in_person"]),
   paymentMethod: z.enum([

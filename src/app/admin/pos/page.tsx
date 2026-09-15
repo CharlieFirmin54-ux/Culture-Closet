@@ -18,6 +18,11 @@ function productSizes(product: PosProduct): string[] {
   return Object.keys(product.inventory || {});
 }
 
+function unitPrice(p: PosProduct | undefined): number {
+  if (!p) return 0;
+  return p.onSale && p.salePrice != null ? p.salePrice : p.price;
+}
+
 export default function PosPage() {
   const router = useRouter();
   const [products, setProducts] = useState<PosProduct[]>([]);
@@ -41,7 +46,6 @@ export default function PosPage() {
           return;
         }
         setAuthChecked(true);
-        // Prefer admin payload so inventory/sizes are complete
         const admin = await fetch("/api/admin");
         if (admin.ok) {
           const data = await admin.json();
@@ -76,24 +80,43 @@ export default function PosPage() {
       .slice(0, 40);
   }, [products, query]);
 
+  const ticketQty = useMemo(
+    () => ticket.reduce((sum, item) => sum + item.quantity, 0),
+    [ticket]
+  );
+
   const total = useMemo(() => {
     return ticket.reduce((sum, item) => {
       const p = products.find((x) => x.id === item.productId);
-      const unit =
-        p?.onSale && p.salePrice != null ? p.salePrice : p?.price ?? 0;
-      return sum + unit * item.quantity;
+      return sum + unitPrice(p) * item.quantity;
     }, 0);
   }, [ticket, products]);
 
+  function ticketQtyFor(productId: string, size: string) {
+    return (
+      ticket.find((i) => i.productId === productId && i.size === size)
+        ?.quantity ?? 0
+    );
+  }
+
   function addToTicket(product: PosProduct, size: string) {
     const stock = product.inventory?.[size] ?? 0;
+    const onTicket = ticketQtyFor(product.id, size);
     if (stock <= 0) {
       setNotice(`${product.name} · ${size} is out of stock`);
       return;
     }
+    if (onTicket >= stock) {
+      setNotice(`Only ${stock} left in ${product.name} · ${size}`);
+      return;
+    }
     setDone(null);
     setSelected({ productId: product.id, size });
-    setNotice(`Added ${product.name} · size ${size}`);
+    setNotice(
+      onTicket === 0
+        ? `Added ${product.name} · size ${size}`
+        : `Updated ${product.name} · size ${size} × ${onTicket + 1}`
+    );
     setTicket((prev) => {
       const idx = prev.findIndex(
         (i) => i.productId === product.id && i.size === size
@@ -105,6 +128,30 @@ export default function PosPage() {
       }
       return [...prev, { productId: product.id, size, quantity: 1 }];
     });
+  }
+
+  function setQty(productId: string, size: string, quantity: number) {
+    const product = products.find((p) => p.id === productId);
+    const stock = product?.inventory?.[size] ?? 0;
+    if (quantity <= 0) {
+      setTicket((t) =>
+        t.filter((x) => !(x.productId === productId && x.size === size))
+      );
+      return;
+    }
+    const nextQty = Math.min(quantity, stock);
+    if (quantity > stock) {
+      setNotice(
+        `Only ${stock} left in ${product?.name || "item"} · ${size}`
+      );
+    }
+    setTicket((prev) =>
+      prev.map((x) =>
+        x.productId === productId && x.size === size
+          ? { ...x, quantity: nextQty }
+          : x
+      )
+    );
   }
 
   if (!authChecked) {
@@ -122,8 +169,8 @@ export default function PosPage() {
           <p className="admin-kicker">In person</p>
           <h1 className="page-title">Apple Pay POS</h1>
           <p className="admin-sub">
-            Tap a size to add it to the ticket, then take Apple Pay face to
-            face.
+            Tap sizes to build a multi-item ticket, then take one Apple Pay for
+            the full total.
           </p>
         </div>
         <Link href="/admin" className="admin-link-btn">
@@ -179,23 +226,28 @@ export default function PosPage() {
                     </div>
                   </div>
 
-                  <p className="pos-size-label">Select size</p>
+                  <p className="pos-size-label">Tap a size to add</p>
                   <div className="pos-size-grid">
                     {sizes.map((s) => {
                       const stock = p.inventory?.[s] ?? 0;
+                      const onTicket = ticketQtyFor(p.id, s);
                       const isSelected =
                         selected?.productId === p.id && selected.size === s;
                       return (
                         <button
                           key={s}
                           type="button"
-                          disabled={stock <= 0}
-                          className={`pos-size-btn${isSelected ? " is-active" : ""}`}
+                          disabled={stock <= 0 || onTicket >= stock}
+                          className={`pos-size-btn${isSelected || onTicket > 0 ? " is-active" : ""}`}
                           onClick={() => addToTicket(p, s)}
                         >
                           <span className="pos-size-num">{s}</span>
                           <span className="pos-size-stock">
-                            {stock > 0 ? `${stock} left` : "Out"}
+                            {onTicket > 0
+                              ? `${onTicket} on ticket`
+                              : stock > 0
+                                ? `${stock} left`
+                                : "Out"}
                           </span>
                         </button>
                       );
@@ -212,51 +264,51 @@ export default function PosPage() {
         </div>
 
         <aside className="pos-ticket">
-          <h2>Ticket</h2>
+          <div className="pos-ticket-head">
+            <h2>Ticket</h2>
+            {ticketQty > 0 && (
+              <span className="pos-ticket-count">
+                {ticketQty} item{ticketQty === 1 ? "" : "s"}
+              </span>
+            )}
+          </div>
           {ticket.length === 0 ? (
-            <p className="admin-empty">Tap a size to add items.</p>
+            <p className="admin-empty">
+              Tap sizes to add as many products as you need.
+            </p>
           ) : (
             <ul className="pos-ticket-list">
               {ticket.map((item) => {
                 const p = products.find((x) => x.id === item.productId);
-                const unit =
-                  p?.onSale && p.salePrice != null
-                    ? p.salePrice
-                    : p?.price ?? 0;
+                const unit = unitPrice(p);
+                const stock = p?.inventory?.[item.size] ?? 0;
                 return (
                   <li key={`${item.productId}-${item.size}`}>
                     <div>
                       <p className="pos-ticket-name">{p?.name}</p>
                       <p className="pos-ticket-detail">
-                        Size {item.size} · Qty {item.quantity} ·{" "}
+                        Size {item.size} · {formatPrice(unit)} each ·{" "}
                         {formatPrice(unit * item.quantity)}
                       </p>
                     </div>
                     <div className="pos-ticket-actions">
                       <button
                         type="button"
+                        aria-label="Decrease quantity"
                         onClick={() =>
-                          setTicket((t) =>
-                            t.map((x) =>
-                              x.productId === item.productId &&
-                              x.size === item.size
-                                ? {
-                                    ...x,
-                                    quantity: Math.max(1, x.quantity - 1),
-                                  }
-                                : x
-                            )
-                          )
+                          setQty(item.productId, item.size, item.quantity - 1)
                         }
                       >
                         −
                       </button>
+                      <span className="pos-ticket-qty">{item.quantity}</span>
                       <button
                         type="button"
-                        onClick={() => {
-                          if (!p) return;
-                          addToTicket(p, item.size);
-                        }}
+                        aria-label="Increase quantity"
+                        disabled={item.quantity >= stock}
+                        onClick={() =>
+                          setQty(item.productId, item.size, item.quantity + 1)
+                        }
                       >
                         +
                       </button>
@@ -284,8 +336,22 @@ export default function PosPage() {
             </ul>
           )}
 
+          {ticket.length > 0 && (
+            <button
+              type="button"
+              className="pos-clear-ticket"
+              onClick={() => {
+                setTicket([]);
+                setSelected(null);
+                setNotice(null);
+              }}
+            >
+              Clear ticket
+            </button>
+          )}
+
           <div className="pos-ticket-total">
-            <span>Total</span>
+            <span>Total ({ticketQty})</span>
             <span>{formatPrice(total)}</span>
           </div>
 

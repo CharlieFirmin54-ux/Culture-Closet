@@ -2160,16 +2160,31 @@ img {
 }
 
 .pos-ticket h2 {
-  margin: 0 0 0.85rem;
+  margin: 0;
   font-size: 1rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   font-weight: 700;
 }
 
+.pos-ticket-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.85rem;
+}
+
+.pos-ticket-count {
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
 .pos-ticket-list {
   list-style: none;
-  margin: 0 0 1rem;
+  margin: 0 0 0.65rem;
   padding: 0;
   display: grid;
   gap: 0.85rem;
@@ -2197,7 +2212,16 @@ img {
 .pos-ticket-actions {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: 0.45rem;
+}
+
+.pos-ticket-qty {
+  min-width: 1.5rem;
+  text-align: center;
+  font-size: 0.9rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
 }
 
 .pos-ticket-actions button {
@@ -2211,9 +2235,29 @@ img {
   cursor: pointer;
 }
 
+.pos-ticket-actions button:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
 .pos-ticket-actions button.is-danger {
   border-color: #8a1f1f;
   color: #8a1f1f;
+  margin-left: auto;
+}
+
+.pos-clear-ticket {
+  display: block;
+  width: 100%;
+  margin: 0 0 0.85rem;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.8rem;
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 0.25rem 0;
+  text-align: left;
 }
 
 .pos-ticket-total {

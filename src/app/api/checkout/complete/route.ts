@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getSession } from "@/lib/auth";
-import { createOrder, decrementStock } from "@/lib/store";
+import { decodeLinesMetadata } from "@/lib/checkout-lines";
+import { createOrder, decrementStock, getProductById } from "@/lib/store";
 import { getStripe } from "@/lib/stripe";
 import type { Order, OrderItem, PaymentMethod } from "@/lib/types";
 
@@ -34,7 +35,28 @@ export async function POST(req: Request) {
       );
     }
 
-    const lines = JSON.parse(intent.metadata.lines || "[]") as OrderItem[];
+    const compact = decodeLinesMetadata(
+      intent.metadata as Record<string, string>
+    );
+    if (!compact.length) {
+      return NextResponse.json(
+        { error: "Payment is missing cart items" },
+        { status: 400 }
+      );
+    }
+
+    const lines: OrderItem[] = [];
+    for (const row of compact) {
+      const product = await getProductById(row.productId);
+      lines.push({
+        productId: row.productId,
+        name: product?.name || row.productId,
+        size: row.size,
+        quantity: row.quantity,
+        unitPrice: row.unitPrice,
+      });
+    }
+
     const stock = await decrementStock(
       lines.map((l) => ({
         productId: l.productId,
@@ -63,7 +85,7 @@ export async function POST(req: Request) {
       stripePaymentIntentId: intent.id,
     };
     await createOrder(order);
-    return NextResponse.json({ orderId: order.id });
+    return NextResponse.json({ orderId: order.id, itemCount: lines.length });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Complete failed";
     return NextResponse.json({ error: message }, { status: 400 });

@@ -1,19 +1,23 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getSession } from "@/lib/auth";
+import { encodeLinesMetadata } from "@/lib/checkout-lines";
 import { getProductById, getStoreSettings } from "@/lib/store";
 import { getSalePrice } from "@/lib/store-client";
 import { getPublishableKey, getStripe, hasStripe, toMinor } from "@/lib/stripe";
 import type { CartItem } from "@/lib/types";
 
 const bodySchema = z.object({
-  items: z.array(
-    z.object({
-      productId: z.string(),
-      size: z.string(),
-      quantity: z.number().int().positive(),
-    })
-  ),
+  items: z
+    .array(
+      z.object({
+        productId: z.string(),
+        size: z.string(),
+        quantity: z.number().int().positive().max(99),
+      })
+    )
+    .min(1)
+    .max(50),
   email: z.string().email(),
   channel: z.enum(["online", "in_person"]).default("online"),
 });
@@ -70,6 +74,7 @@ export async function POST(req: Request) {
     }
 
     const stripe = getStripe()!;
+    const lineMeta = encodeLinesMetadata(lines);
     const intent = await stripe.paymentIntents.create({
       amount: toMinor(total),
       currency: "gbp",
@@ -79,7 +84,7 @@ export async function POST(req: Request) {
         channel: parsed.channel,
         userId: session?.id || "",
         email: parsed.email,
-        lines: JSON.stringify(lines),
+        ...lineMeta,
       },
     });
 
@@ -88,6 +93,7 @@ export async function POST(req: Request) {
       clientSecret: intent.client_secret,
       publishableKey: getPublishableKey(),
       total,
+      itemCount: lines.length,
       paymentIntentId: intent.id,
     });
   } catch (err) {
