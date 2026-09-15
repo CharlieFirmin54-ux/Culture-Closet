@@ -1966,3 +1966,281 @@ img {
   font-weight: 600;
   margin-bottom: 0.25rem;
 }
+
+/* Apple Pay POS */
+.pos-page {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 2rem 1.25rem 4rem;
+}
+
+@media (min-width: 640px) {
+  .pos-page {
+    padding: 2.75rem 2rem 5rem;
+  }
+}
+
+.pos-hero {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  margin-bottom: 1.75rem;
+}
+
+@media (min-width: 768px) {
+  .pos-hero {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: flex-end;
+  }
+}
+
+.pos-banner {
+  margin-bottom: 1.25rem;
+  border: 1px solid var(--line);
+  background: #fff;
+  padding: 0.85rem 1rem;
+  font-size: 0.9rem;
+}
+
+.pos-banner.is-success {
+  border-color: rgba(31, 90, 52, 0.35);
+  background: #f1f7f2;
+}
+
+.pos-layout {
+  display: grid;
+  gap: 1.5rem;
+}
+
+@media (min-width: 1024px) {
+  .pos-layout {
+    grid-template-columns: 1.35fr 0.75fr;
+    align-items: start;
+  }
+}
+
+.pos-search {
+  width: 100%;
+  min-height: 3rem;
+  border: 1px solid var(--line);
+  background: #fff;
+  padding: 0.85rem 1rem;
+  margin-bottom: 1rem;
+  outline: none;
+}
+
+.pos-search:focus {
+  border-color: #000;
+}
+
+.pos-product-list {
+  display: grid;
+  gap: 1rem;
+}
+
+.pos-product {
+  border: 1px solid var(--line);
+  background: #fff;
+  padding: 1rem;
+}
+
+.pos-product-top {
+  display: grid;
+  grid-template-columns: 72px 1fr;
+  gap: 0.85rem;
+  margin-bottom: 1rem;
+}
+
+.pos-product-media {
+  aspect-ratio: 1;
+  overflow: hidden;
+  background: var(--soft);
+}
+
+.pos-product-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.pos-product-cat {
+  margin: 0 0 0.25rem;
+  font-size: 9px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--fog);
+  font-weight: 600;
+}
+
+.pos-product-meta h2 {
+  margin: 0 0 0.35rem;
+  font-size: 1rem;
+  line-height: 1.25;
+  font-weight: 600;
+}
+
+.pos-product-meta p {
+  margin: 0;
+  font-size: 0.92rem;
+}
+
+.pos-size-label {
+  margin: 0 0 0.55rem;
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.pos-size-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+@media (min-width: 480px) {
+  .pos-size-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 640px) {
+  .pos-size-grid {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+}
+
+.pos-size-btn {
+  min-height: 3.35rem;
+  border: 1.5px solid #000;
+  background: #fff;
+  color: #000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.15rem;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  padding: 0.35rem 0.25rem;
+}
+
+.pos-size-btn.is-active {
+  background: #000;
+  color: #fff;
+}
+
+.pos-size-btn:disabled {
+  opacity: 0.28;
+  cursor: not-allowed;
+  text-decoration: line-through;
+}
+
+.pos-size-num {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.pos-size-stock {
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.7;
+}
+
+.pos-ticket {
+  border: 1px solid var(--line);
+  background: #fff;
+  padding: 1.15rem;
+  position: sticky;
+  top: 6.5rem;
+}
+
+.pos-ticket h2 {
+  margin: 0 0 0.85rem;
+  font-size: 1rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+
+.pos-ticket-list {
+  list-style: none;
+  margin: 0 0 1rem;
+  padding: 0;
+  display: grid;
+  gap: 0.85rem;
+}
+
+.pos-ticket-list li {
+  display: grid;
+  gap: 0.45rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--hairline);
+}
+
+.pos-ticket-name {
+  margin: 0;
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+
+.pos-ticket-detail {
+  margin: 0.2rem 0 0;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.pos-ticket-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.pos-ticket-actions button {
+  min-height: 2.2rem;
+  min-width: 2.2rem;
+  border: 1px solid #000;
+  background: #fff;
+  padding: 0 0.65rem;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.pos-ticket-actions button.is-danger {
+  border-color: #8a1f1f;
+  color: #8a1f1f;
+}
+
+.pos-ticket-total {
+  display: flex;
+  justify-content: space-between;
+  font-weight: 700;
+  border-top: 1px solid var(--line);
+  padding-top: 0.85rem;
+  margin-bottom: 1rem;
+}
+
+.pos-email {
+  display: grid;
+  gap: 0.4rem;
+  margin-bottom: 1rem;
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.pos-email input {
+  min-height: 2.75rem;
+  border: 1px solid var(--line);
+  padding: 0.7rem 0.85rem;
+  font-size: 0.95rem;
+  letter-spacing: normal;
+  text-transform: none;
+  font-weight: 400;
+}
