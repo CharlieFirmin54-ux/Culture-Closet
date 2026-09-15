@@ -495,7 +495,7 @@ export const seedUsers: User[] = [
     email: "admin@culturecloset.com",
     name: "Store Admin",
     passwordHash:
-      "$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy",
+      "$2b$10$Y3PQaPyhU6.Pq4k89zFFweernXl6jwvXNPfb.3OXPt3Ri40x4EJfS",
     role: "admin",
     createdAt: now,
   },
@@ -504,7 +504,7 @@ export const seedUsers: User[] = [
     email: "demo@culturecloset.com",
     name: "Demo Customer",
     passwordHash:
-      "$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy",
+      "$2b$10$Y3PQaPyhU6.Pq4k89zFFweernXl6jwvXNPfb.3OXPt3Ri40x4EJfS",
     role: "customer",
     createdAt: now,
   },
