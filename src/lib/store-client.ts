@@ -34,7 +34,8 @@ export function getSalePrice(
 ): number {
   const pct = getSalePercent(productSalePercent, storeSalePercent);
   if (pct <= 0) return price;
-  return Math.round(price * (100 - pct) * 100) / 100;
+  // e.g. 50% off £49.99 → £24.995 → £25.00
+  return Math.round(price * (1 - pct / 100) * 100) / 100;
 }
 
 export function isOnSale(
