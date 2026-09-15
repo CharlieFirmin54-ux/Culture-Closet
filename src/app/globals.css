@@ -2278,6 +2278,13 @@ img {
   border-bottom: 1px solid var(--hairline);
 }
 
+.pos-ticket-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
 .pos-ticket-name {
   margin: 0;
   font-size: 0.92rem;
@@ -2321,24 +2328,44 @@ img {
   cursor: not-allowed;
 }
 
-.pos-ticket-actions button.is-danger {
-  border-color: #8a1f1f;
+.pos-remove-btn {
+  flex-shrink: 0;
+  min-height: 2.4rem;
+  padding: 0.45rem 0.75rem;
+  border: 1px solid #8a1f1f;
+  background: #fff;
   color: #8a1f1f;
-  margin-left: auto;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.pos-remove-btn:hover {
+  background: #8a1f1f;
+  color: #fff;
 }
 
 .pos-clear-ticket {
   display: block;
   width: 100%;
   margin: 0 0 0.85rem;
-  border: 0;
-  background: transparent;
-  color: var(--muted);
-  font-size: 0.8rem;
-  text-decoration: underline;
+  min-height: 2.6rem;
+  border: 1px solid var(--line);
+  background: #fff;
+  color: var(--ink);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-weight: 700;
   cursor: pointer;
-  padding: 0.25rem 0;
-  text-align: left;
+  padding: 0.55rem 0.75rem;
+  text-align: center;
+}
+
+.pos-clear-ticket:hover {
+  border-color: var(--ink);
 }
 
 .pos-ticket-total {

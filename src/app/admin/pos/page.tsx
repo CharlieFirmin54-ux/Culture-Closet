@@ -284,12 +284,41 @@ export default function PosPage() {
                 const stock = p?.inventory?.[item.size] ?? 0;
                 return (
                   <li key={`${item.productId}-${item.size}`}>
-                    <div>
-                      <p className="pos-ticket-name">{p?.name}</p>
-                      <p className="pos-ticket-detail">
-                        Size {item.size} · {formatPrice(unit)} each ·{" "}
-                        {formatPrice(unit * item.quantity)}
-                      </p>
+                    <div className="pos-ticket-row">
+                      <div>
+                        <p className="pos-ticket-name">{p?.name}</p>
+                        <p className="pos-ticket-detail">
+                          Size {item.size} · {formatPrice(unit)} each ·{" "}
+                          {formatPrice(unit * item.quantity)}
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        className="pos-remove-btn"
+                        aria-label={`Remove ${p?.name || "item"} size ${item.size}`}
+                        onClick={() => {
+                          setTicket((t) =>
+                            t.filter(
+                              (x) =>
+                                !(
+                                  x.productId === item.productId &&
+                                  x.size === item.size
+                                )
+                            )
+                          );
+                          setSelected((cur) =>
+                            cur?.productId === item.productId &&
+                            cur.size === item.size
+                              ? null
+                              : cur
+                          );
+                          setNotice(
+                            `Removed ${p?.name || "item"} · size ${item.size}`
+                          );
+                        }}
+                      >
+                        Remove
+                      </button>
                     </div>
                     <div className="pos-ticket-actions">
                       <button
@@ -312,23 +341,6 @@ export default function PosPage() {
                       >
                         +
                       </button>
-                      <button
-                        type="button"
-                        className="is-danger"
-                        onClick={() =>
-                          setTicket((t) =>
-                            t.filter(
-                              (x) =>
-                                !(
-                                  x.productId === item.productId &&
-                                  x.size === item.size
-                                )
-                            )
-                          )
-                        }
-                      >
-                        Remove
-                      </button>
                     </div>
                   </li>
                 );
@@ -343,10 +355,10 @@ export default function PosPage() {
               onClick={() => {
                 setTicket([]);
                 setSelected(null);
-                setNotice(null);
+                setNotice("Ticket cleared");
               }}
             >
-              Clear ticket
+              Clear whole ticket
             </button>
           )}
 
