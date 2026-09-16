@@ -304,22 +304,6 @@ img {
   font-weight: 700;
 }
 
-.site-logo-mark {
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  object-fit: cover;
-  flex-shrink: 0;
-  box-shadow: 0 0 0 1px rgba(12, 12, 12, 0.12);
-}
-
-@media (min-width: 640px) {
-  .site-logo-mark {
-    width: 32px;
-    height: 32px;
-  }
-}
-
 .site-logo-text {
   letter-spacing: 0.42em;
   text-indent: 0.12em;

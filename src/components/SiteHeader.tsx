@@ -120,14 +120,6 @@ export function SiteHeader({
         </button>
 
         <Link href="/" className="site-logo" aria-label="Culture Closet home">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="/brand/firmin-mark-sm.png"
-            alt=""
-            className="site-logo-mark"
-            width={32}
-            height={32}
-          />
           <span className="site-logo-text">Culture Closet</span>
         </Link>
 
